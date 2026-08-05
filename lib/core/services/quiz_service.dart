@@ -188,4 +188,35 @@ class QuizService {
       "score": score,
     }).eq("id", attemptId);
   }
+
+  Future<List<Map<String, dynamic>>> getQuizResults(String quizId) async {
+    final response = await supabase.from("quiz_attempts").select('''
+        score,
+        total_items,
+        submitted_at,
+        profiles!quiz_attempts_student_id_fkey(
+          full_name,
+          email
+        )
+      ''').eq("quiz_id", quizId).order("submitted_at", ascending: false);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  Future<List<Map<String, dynamic>>> getStudentQuizHistory() async {
+    final user = supabase.auth.currentUser!;
+
+    final response = await supabase.from("quiz_attempts").select("""
+        id,
+        score,
+        total_items,
+        submitted_at,
+        quizzes(
+          id,
+          title
+        )
+      """).eq("student_id", user.id).order("submitted_at", ascending: false);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
 }

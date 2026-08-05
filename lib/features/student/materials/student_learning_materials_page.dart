@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/services/learning_material_service.dart';
 import '../../../models/course.dart';
 import '../../../models/learning_material.dart';
+import '../../../core/services/file_service.dart';
 
 class StudentLearningMaterialsPage extends StatefulWidget {
   final Course course;
@@ -20,6 +21,7 @@ class StudentLearningMaterialsPage extends StatefulWidget {
 class _StudentLearningMaterialsPageState
     extends State<StudentLearningMaterialsPage> {
   final LearningMaterialService _service = LearningMaterialService();
+  final FileService _fileService = FileService();
 
   List<LearningMaterial> materials = [];
   bool loading = true;
@@ -84,8 +86,21 @@ class _StudentLearningMaterialsPageState
                         title: Text(material.fileName),
                         subtitle: Text(material.fileType.toUpperCase()),
                         trailing: const Icon(Icons.arrow_forward_ios),
-                        onTap: () {
-                          // We'll implement file viewing next.
+                        onTap: () async {
+                          try {
+                            await _fileService.openFile(
+                              filePath: material.filePath,
+                              fileName: material.fileName,
+                            );
+                          } catch (e) {
+                            if (!mounted) return;
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(e.toString()),
+                              ),
+                            );
+                          }
                         },
                       ),
                     );

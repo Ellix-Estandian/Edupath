@@ -6,6 +6,7 @@ import '../../../models/quiz.dart';
 import 'create_quiz_page.dart';
 import 'edit_quiz_page.dart';
 import 'question_list_page.dart';
+import 'quiz_results_page.dart';
 
 class QuizListPage extends StatefulWidget {
   final Course course;
@@ -103,6 +104,7 @@ class _QuizListPageState extends State<QuizListPage> {
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.edit),
+                                tooltip: "Edit",
                                 onPressed: () async {
                                   final updated = await Navigator.push(
                                     context,
@@ -119,7 +121,22 @@ class _QuizListPageState extends State<QuizListPage> {
                                 },
                               ),
                               IconButton(
+                                icon: const Icon(Icons.bar_chart),
+                                tooltip: "Results",
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => QuizResultsPage(
+                                        quiz: quiz,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              IconButton(
                                 icon: const Icon(Icons.delete),
+                                tooltip: "Delete",
                                 onPressed: () {
                                   deleteQuiz(quiz.id);
                                 },

@@ -51,6 +51,15 @@ class _TakeQuizPageState extends State<TakeQuizPage> {
   }
 
   Future<void> submitQuiz() async {
+    if (selectedAnswers.length != questions.length) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Please answer all questions before submitting."),
+        ),
+      );
+      return;
+    }
+
     final user = Supabase.instance.client.auth.currentUser;
 
     if (user == null) return;
@@ -151,8 +160,33 @@ class _TakeQuizPageState extends State<TakeQuizPage> {
             ),
             const SizedBox(height: 10),
           ],
+          const SizedBox(height: 20),
           ElevatedButton(
-            onPressed: submitQuiz,
+            onPressed: () async {
+              final submit = await showDialog<bool>(
+                context: context,
+                builder: (_) => AlertDialog(
+                  title: const Text("Submit Quiz"),
+                  content: const Text(
+                    "Are you sure you want to submit your answers?",
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text("Cancel"),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text("Submit"),
+                    ),
+                  ],
+                ),
+              );
+
+              if (submit == true) {
+                submitQuiz();
+              }
+            },
             child: const Text("Submit Quiz"),
           ),
         ],

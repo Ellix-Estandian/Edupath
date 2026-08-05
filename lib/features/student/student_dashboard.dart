@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'courses/student_courses_page.dart';
 import 'courses/join_course_page.dart';
+import 'quiz/quiz_history_page.dart';
 
 class StudentDashboard extends StatelessWidget {
   const StudentDashboard({super.key});
@@ -77,13 +78,14 @@ class StudentDashboard extends StatelessWidget {
             Card(
               child: ListTile(
                 leading: const Icon(Icons.history),
-                title: const Text("My Results"),
-                subtitle: const Text("View quiz scores"),
+                title: const Text("My Quiz History"),
+                subtitle: const Text("View your previous quiz attempts"),
                 trailing: const Icon(Icons.arrow_forward_ios),
                 onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Coming soon"),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const QuizHistoryPage(),
                     ),
                   );
                 },

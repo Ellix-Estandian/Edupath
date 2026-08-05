@@ -56,21 +56,10 @@ class CourseDetailPage extends StatelessWidget {
             const Divider(),
             ListTile(
               leading: const Icon(Icons.quiz),
-              title: const Text("AI Quizzes"),
+              title: const Text("Quizzes"),
+              subtitle: const Text("Create and manage quizzes"),
               trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {},
-            ),
-            const Divider(),
-            ListTile(
-              leading: const Icon(Icons.assignment),
-              title: const Text("AI Examinations"),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {},
-            ),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.quiz),
-              label: const Text("Manage Quiz"),
-              onPressed: () {
+              onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -80,6 +69,13 @@ class CourseDetailPage extends StatelessWidget {
                   ),
                 );
               },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.assignment),
+              title: const Text("AI Examinations"),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {},
             ),
             const SizedBox(height: 20),
             Card(
