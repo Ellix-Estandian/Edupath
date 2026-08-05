@@ -3,10 +3,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../models/quiz.dart';
 import '../../models/quiz_answer.dart';
 import '../../models/quiz_question.dart';
+import 'notification_service.dart';
 
 class QuizService {
   final supabase = Supabase.instance.client;
-
+  final notificationService = NotificationService();
   // ===========================
   // QUIZ CRUD
   // ===========================
@@ -26,11 +27,27 @@ class QuizService {
     required String title,
     required String description,
   }) async {
+    // Create the quiz
     await supabase.from("quizzes").insert({
       "course_id": courseId,
       "title": title,
       "description": description,
     });
+
+    // Get all students enrolled in the course
+    final enrollments = await supabase
+        .from("enrollments")
+        .select("student_id")
+        .eq("course_id", courseId);
+
+    // Notify every student
+    for (final enrollment in enrollments) {
+      await notificationService.createNotification(
+        userId: enrollment["student_id"],
+        title: "New Quiz Available",
+        message: "A new quiz \"$title\" has been added to one of your courses.",
+      );
+    }
   }
 
   Future<void> updateQuiz({

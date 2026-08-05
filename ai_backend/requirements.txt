@@ -10,3 +10,5 @@ requests
 python-pptx
 numpy
 pydantic
+python-docx
+reportlab

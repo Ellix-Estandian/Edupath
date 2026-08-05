@@ -24,7 +24,7 @@ def ask(prompt: str):
             }
         ],
         temperature=0.2,
-        max_tokens=256,
+        max_tokens=1500,
     )
 
     return output["choices"][0]["message"]["content"]

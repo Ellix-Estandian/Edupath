@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'courses/student_courses_page.dart';
 import 'courses/join_course_page.dart';
 import 'quiz/quiz_history_page.dart';
+import '../notifications/notification_page.dart';
 
 class StudentDashboard extends StatelessWidget {
   const StudentDashboard({super.key});
@@ -12,6 +13,19 @@ class StudentDashboard extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Student Dashboard"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const NotificationsPage(),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),

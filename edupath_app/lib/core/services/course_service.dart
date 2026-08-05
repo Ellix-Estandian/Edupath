@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart';
 
 import '../../models/course.dart';
 import 'supabase_service.dart';
+import 'notification_service.dart';
 
 class CourseService {
   final supabase = SupabaseService.client;
+  final notificationService = NotificationService();
 
   Future<void> createCourse({
     required String title,
@@ -52,14 +54,12 @@ class CourseService {
   Future<void> joinCourse(String courseCode) async {
     final user = supabase.auth.currentUser!;
 
-    // Find the course
     final course = await supabase
         .from("courses")
         .select()
         .eq("course_code", courseCode.toUpperCase())
         .single();
 
-    // Check if already enrolled
     final existing = await supabase
         .from("enrollments")
         .select()
@@ -70,11 +70,23 @@ class CourseService {
       throw Exception("You are already enrolled in this course.");
     }
 
-    // Enroll the student
     await supabase.from("enrollments").insert({
-      "student_id": user.id,
       "course_id": course["id"],
+      "student_id": user.id,
     });
+
+    final courseDetails = await supabase
+        .from("courses")
+        .select("title, professor_id")
+        .eq("id", course["id"])
+        .single();
+
+    await notificationService.createNotification(
+      userId: courseDetails["professor_id"],
+      title: "New Student Enrolled",
+      message:
+          "${user.email ?? "A student"} joined your course '${courseDetails["title"]}'.",
+    );
   }
 
   Future<List<Course>> getStudentCourses() async {

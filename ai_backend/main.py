@@ -13,6 +13,21 @@ from fastapi.responses import FileResponse
 from services.presentation_ai_service import generate_slide_content
 from services.slide_parser import parse_slides
 import uuid
+from services.quiz_ai_service import generate_quiz
+import json
+from services.quiz_save_service import save_quiz
+from services.exam_ai_service import generate_exam
+from services.exam_export_service import export_exam_to_docx
+from services.exam_pdf_service import export_exam_to_pdf
+
+class IndexRequest(BaseModel):
+    material_id: str
+    pdf_path: str
+
+class SaveQuizRequest(BaseModel):
+    course_id: str
+    title: str
+    questions: list
 
 app = FastAPI(title="EduPath AI Backend")
 
@@ -93,11 +108,6 @@ def rag(question: str, course_id: str):
         "answer": ask_rag(question, course_id)
     }
 
-class IndexRequest(BaseModel):
-    material_id: str
-    pdf_path: str
-
-
 @app.post("/index-material")
 def index_material(request: IndexRequest):
     count = index_pdf(
@@ -147,4 +157,133 @@ def generate_presentation(course_id: str, topic: str):
         output,
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
         filename="presentation.pptx",
+    )
+
+@app.get("/generate-quiz")
+def generate_quiz_endpoint(
+    course_id: str,
+    topic: str,
+    num_questions: int = 5,
+):
+    ai_output = generate_quiz(
+        course_id=course_id,
+        topic=topic,
+        num_questions=num_questions,
+    )
+
+    try:
+        quiz = json.loads(ai_output)
+    except Exception:
+        return {
+            "success": False,
+            "raw_output": ai_output,
+        }
+
+    return {
+        "success": True,
+        "quiz": quiz,
+    }
+
+@app.post("/save-generated-quiz")
+def save_generated_quiz(request: SaveQuizRequest):
+
+    quiz_id = save_quiz(
+        request.course_id,
+        request.title,
+        request.questions,
+    )
+
+    return {
+        "success": True,
+        "quiz_id": quiz_id,
+    }
+
+@app.get("/generate-exam")
+def generate_exam_endpoint(
+    course_id: str,
+    topic: str,
+    mcq: int = 10,
+    tf: int = 5,
+    identification: int = 5,
+    essay: int = 2,
+    difficulty: str = "Medium",
+):
+    exam = generate_exam(
+        course_id=course_id,
+        topic=topic,
+        mcq=mcq,
+        tf=tf,
+        identification=identification,
+        essay=essay,
+        difficulty=difficulty,
+    )
+
+    return {
+        "exam": exam,
+    }
+
+@app.get("/download-exam")
+def download_exam(
+    course_id: str,
+    topic: str,
+    mcq: int = 10,
+    tf: int = 5,
+    identification: int = 5,
+    essay: int = 2,
+    difficulty: str = "Medium",
+):
+    exam = generate_exam(
+        course_id=course_id,
+        topic=topic,
+        mcq=mcq,
+        tf=tf,
+        identification=identification,
+        essay=essay,
+        difficulty=difficulty,
+    )
+
+    output = "generated_exam.docx"
+
+    export_exam_to_docx(
+        exam,
+        output,
+    )
+
+    return FileResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename="Generated Examination.docx",
+    )
+
+@app.get("/download-exam-pdf")
+def download_exam_pdf(
+    course_id: str,
+    topic: str,
+    mcq: int = 10,
+    tf: int = 5,
+    identification: int = 5,
+    essay: int = 2,
+    difficulty: str = "Medium",
+):
+    exam = generate_exam(
+        course_id=course_id,
+        topic=topic,
+        mcq=mcq,
+        tf=tf,
+        identification=identification,
+        essay=essay,
+        difficulty=difficulty,
+    )
+
+    output = "generated_exam.pdf"
+
+    export_exam_to_pdf(
+        exam,
+        output,
+    )
+
+    return FileResponse(
+        output,
+        media_type="application/pdf",
+        filename="Generated Examination.pdf",
     )

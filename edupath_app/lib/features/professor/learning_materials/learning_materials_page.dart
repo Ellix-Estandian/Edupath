@@ -8,6 +8,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/services/storage_service.dart';
 import '../../../core/services/ai_backend_service.dart';
+import '../../../core/services/notification_service.dart';
 
 extension LearningMaterialServiceAddMaterial on LearningMaterialService {
   Future<Map<String, dynamic>> createMaterial({
@@ -61,6 +62,7 @@ class _LearningMaterialsPageState extends State<LearningMaterialsPage> {
   final LearningMaterialService service = LearningMaterialService();
   final StorageService storageService = StorageService();
   final AIBackendService aiBackend = AIBackendService();
+  final NotificationService notificationService = NotificationService();
   List<LearningMaterial> materials = [];
 
   bool loading = true;
@@ -123,6 +125,30 @@ class _LearningMaterialsPageState extends State<LearningMaterialsPage> {
       );
 
       debugPrint("Indexed successfully");
+
+      await loadMaterials();
+      await aiBackend.indexMaterial(
+        materialId: material["id"],
+        pdfPath: uploadedPath,
+      );
+
+      debugPrint("Indexed successfully");
+
+// Get all enrolled students
+      final enrollments = await Supabase.instance.client
+          .from("enrollments")
+          .select("student_id")
+          .eq("course_id", widget.course.id);
+
+// Notify each student
+      for (final enrollment in enrollments) {
+        await notificationService.createNotification(
+          userId: enrollment["student_id"],
+          title: "New Learning Material",
+          message:
+              "${result.files.single.name} has been uploaded to ${widget.course.title}.",
+        );
+      }
 
       await loadMaterials();
     } catch (e, stackTrace) {

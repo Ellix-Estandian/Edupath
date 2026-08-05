@@ -4,7 +4,9 @@ import 'package:open_filex/open_filex.dart';
 import '../../../core/services/presentation_service.dart';
 import '../../../models/course.dart';
 import '../learning_materials/learning_materials_page.dart';
+import '../quiz/ai_quiz_page.dart';
 import '../quiz/quiz_list_page.dart';
+import '../exam/ai_exam_page.dart';
 
 class CourseDetailPage extends StatefulWidget {
   final Course course;
@@ -155,18 +157,43 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
             ),
             const Divider(),
             ListTile(
+              leading: const Icon(Icons.auto_awesome),
+              title: const Text("AI Quiz Generator"),
+              subtitle: const Text("Generate quizzes from learning materials"),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AIQuizPage(
+                      course: widget.course,
+                    ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
               leading: const Icon(Icons.slideshow),
               title: const Text("Generate Presentation"),
               subtitle: const Text("Create AI PowerPoint slides"),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: generatePresentation,
             ),
-            const Divider(),
             ListTile(
-              leading: const Icon(Icons.assignment),
-              title: const Text("AI Examinations"),
+              leading: const Icon(Icons.description),
+              title: const Text("AI Examination"),
+              subtitle: const Text("Generate a complete examination"),
               trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {},
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AIExamPage(
+                      course: widget.course,
+                    ),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 20),
             Card(
