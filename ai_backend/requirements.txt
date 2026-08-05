@@ -2,11 +2,11 @@ fastapi
 uvicorn
 llama-cpp-python
 sentence-transformers
-supabase
-python-dotenv
 pymupdf
-python-pptx
+python-dotenv
+supabase
+postgrest
 requests
+python-pptx
 numpy
-torch
-transformers
+pydantic

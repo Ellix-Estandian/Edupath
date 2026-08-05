@@ -14,8 +14,7 @@ class CoursesPage extends StatefulWidget {
 }
 
 class _CoursesPageState extends State<CoursesPage> {
-  final CourseService _courseService = CourseService();
-
+  final CourseService _courseService = CourseService(); 
   List<Course> courses = [];
   bool loading = true;
 

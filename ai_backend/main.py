@@ -12,6 +12,7 @@ from services.presentation_service import create_presentation
 from fastapi.responses import FileResponse
 from services.presentation_ai_service import generate_slide_content
 from services.slide_parser import parse_slides
+import uuid
 
 app = FastAPI(title="EduPath AI Backend")
 
@@ -135,7 +136,7 @@ def generate_presentation(course_id: str, topic: str):
 
     slides = parse_slides(ai_text)
 
-    output = "generated_presentation.pptx"
+    output = f"generated_{uuid.uuid4()}.pptx"
 
     create_presentation(
         slides,

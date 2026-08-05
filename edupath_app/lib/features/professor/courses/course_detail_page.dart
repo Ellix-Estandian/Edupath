@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
 
+import '../../../core/services/presentation_service.dart';
 import '../../../models/course.dart';
 import '../learning_materials/learning_materials_page.dart';
 import '../quiz/quiz_list_page.dart';
 
-class CourseDetailPage extends StatelessWidget {
+class CourseDetailPage extends StatefulWidget {
   final Course course;
 
   const CourseDetailPage({
@@ -13,10 +15,91 @@ class CourseDetailPage extends StatelessWidget {
   });
 
   @override
+  State<CourseDetailPage> createState() => _CourseDetailPageState();
+}
+
+class _CourseDetailPageState extends State<CourseDetailPage> {
+  final PresentationService presentationService = PresentationService();
+
+  Future<void> generatePresentation() async {
+    final controller = TextEditingController();
+
+    final topic = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Generate Presentation"),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: "Enter topic",
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(
+                context,
+                controller.text.trim(),
+              );
+            },
+            child: const Text("Generate"),
+          ),
+        ],
+      ),
+    );
+
+    if (topic == null || topic.isEmpty) {
+      return;
+    }
+
+    // Show loading indicator while waiting for the AI backend.
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    try {
+      final file = await presentationService.generatePresentation(
+        courseId: widget.course.id,
+        topic: topic,
+      );
+
+      if (mounted) Navigator.pop(context);
+
+      await OpenFilex.open(file.path);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Presentation generated successfully."),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) Navigator.pop(context);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error: $e"),
+          ),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(course.title),
+        title: Text(widget.course.title),
       ),
       body: Padding(
         padding: const EdgeInsets.all(20),
@@ -24,7 +107,7 @@ class CourseDetailPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              course.title,
+              widget.course.title,
               style: const TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.bold,
@@ -32,7 +115,7 @@ class CourseDetailPage extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              course.description,
+              widget.course.description,
               style: const TextStyle(fontSize: 16),
             ),
             const SizedBox(height: 30),
@@ -47,7 +130,7 @@ class CourseDetailPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => LearningMaterialsPage(
-                      course: course,
+                      course: widget.course,
                     ),
                   ),
                 );
@@ -64,11 +147,19 @@ class CourseDetailPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => QuizListPage(
-                      course: course,
+                      course: widget.course,
                     ),
                   ),
                 );
               },
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.slideshow),
+              title: const Text("Generate Presentation"),
+              subtitle: const Text("Create AI PowerPoint slides"),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: generatePresentation,
             ),
             const Divider(),
             ListTile(
@@ -82,7 +173,7 @@ class CourseDetailPage extends StatelessWidget {
               child: ListTile(
                 leading: const Icon(Icons.key),
                 title: const Text("Course Code"),
-                subtitle: SelectableText(course.courseCode),
+                subtitle: SelectableText(widget.course.courseCode),
               ),
             ),
           ],
