@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../models/course.dart';
 import '../quiz/student_quiz_list_page.dart';
 import '../materials/student_learning_materials_page.dart';
+import '../ai_chat/ai_chat_page.dart';
 
 class StudentCourseDetailPage extends StatelessWidget {
   final Course course;
@@ -56,6 +57,21 @@ class StudentCourseDetailPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => StudentQuizListPage(
+                      course: course,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 15),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.smart_toy),
+              label: const Text("AI Tutor"),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => AIChatPage(
                       course: course,
                     ),
                   ),

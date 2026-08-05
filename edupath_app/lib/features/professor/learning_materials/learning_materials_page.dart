@@ -7,23 +7,30 @@ import '../../../models/learning_material.dart';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/services/ai_backend_service.dart';
 
 extension LearningMaterialServiceAddMaterial on LearningMaterialService {
-  Future<void> createMaterial({
+  Future<Map<String, dynamic>> createMaterial({
     required String courseId,
     required String fileName,
     required String filePath,
     required String fileType,
   }) async {
-    await Supabase.instance.client.from('learning_materials').insert({
-      'course_id': courseId,
-      'file_name': fileName,
-      'file_path': filePath,
-      'file_type': fileType,
-    });
+    final response = await Supabase.instance.client
+        .from("learning_materials")
+        .insert({
+          "course_id": courseId,
+          "file_name": fileName,
+          "file_path": filePath,
+          "file_type": fileType,
+        })
+        .select()
+        .single();
+
+    return response;
   }
 
-  Future<void> addMaterial({
+  Future<Map<String, dynamic>> addMaterial({
     required String courseId,
     required String fileName,
     required String filePath,
@@ -53,6 +60,7 @@ class LearningMaterialsPage extends StatefulWidget {
 class _LearningMaterialsPageState extends State<LearningMaterialsPage> {
   final LearningMaterialService service = LearningMaterialService();
   final StorageService storageService = StorageService();
+  final AIBackendService aiBackend = AIBackendService();
   List<LearningMaterial> materials = [];
 
   bool loading = true;
@@ -100,7 +108,7 @@ class _LearningMaterialsPageState extends State<LearningMaterialsPage> {
 
       debugPrint("Uploaded to Storage: $uploadedPath");
 
-      await service.addMaterial(
+      final material = await service.addMaterial(
         courseId: widget.course.id,
         fileName: result.files.single.name,
         filePath: uploadedPath,
@@ -108,6 +116,13 @@ class _LearningMaterialsPageState extends State<LearningMaterialsPage> {
       );
 
       debugPrint("Saved to database");
+
+      await aiBackend.indexMaterial(
+        materialId: material["id"],
+        pdfPath: uploadedPath,
+      );
+
+      debugPrint("Indexed successfully");
 
       await loadMaterials();
     } catch (e, stackTrace) {

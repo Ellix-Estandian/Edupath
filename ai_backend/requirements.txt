@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+llama-cpp-python
+sentence-transformers
+supabase
+python-dotenv
+pymupdf
+python-pptx
+requests
+numpy
+torch
+transformers

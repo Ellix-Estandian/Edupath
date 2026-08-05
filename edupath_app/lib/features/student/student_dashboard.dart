@@ -61,22 +61,6 @@ class StudentDashboard extends StatelessWidget {
             const SizedBox(height: 15),
             Card(
               child: ListTile(
-                leading: const Icon(Icons.quiz),
-                title: const Text("My Quizzes"),
-                subtitle: const Text("Take quizzes from your courses"),
-                trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Coming soon"),
-                    ),
-                  );
-                },
-              ),
-            ),
-            const SizedBox(height: 15),
-            Card(
-              child: ListTile(
                 leading: const Icon(Icons.history),
                 title: const Text("My Quiz History"),
                 subtitle: const Text("View your previous quiz attempts"),
