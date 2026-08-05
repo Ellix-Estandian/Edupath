@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../models/course.dart';
 import '../learning_materials/learning_materials_page.dart';
+import '../quiz/quiz_list_page.dart';
 
 class CourseDetailPage extends StatelessWidget {
   final Course course;
@@ -65,6 +66,28 @@ class CourseDetailPage extends StatelessWidget {
               title: const Text("AI Examinations"),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {},
+            ),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.quiz),
+              label: const Text("Manage Quiz"),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => QuizListPage(
+                      course: course,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 20),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.key),
+                title: const Text("Course Code"),
+                subtitle: SelectableText(course.courseCode),
+              ),
             ),
           ],
         ),
