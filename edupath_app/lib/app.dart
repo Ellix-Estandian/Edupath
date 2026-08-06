@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+
 import 'features/auth/login_page.dart';
+import 'core/theme/app_theme.dart';
 
 class EduPathApp extends StatelessWidget {
   const EduPathApp({super.key});
@@ -9,10 +11,7 @@ class EduPathApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'EduPath',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.blue,
-      ),
+      theme: AppTheme.lightTheme,
       home: const LoginPage(),
     );
   }

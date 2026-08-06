@@ -90,7 +90,11 @@ class CourseService {
   }
 
   Future<List<Course>> getStudentCourses() async {
-    final user = supabase.auth.currentUser!;
+    final user = supabase.auth.currentUser;
+    if (user == null) {
+      debugPrint('getStudentCourses: currentUser is null (not signed in)');
+      return <Course>[];
+    }
 
     final enrollments = await supabase
         .from("enrollments")
@@ -121,6 +125,22 @@ class CourseService {
         await supabase.from("courses").select().order("created_at");
 
     return response.map<Course>((json) => Course.fromJson(json)).toList();
+  }
+
+  /// Diagnostic: return raw enrollment rows for current student
+  Future<List<dynamic>> getStudentEnrollmentsRaw() async {
+    final user = supabase.auth.currentUser;
+    if (user == null) {
+      debugPrint('getStudentEnrollmentsRaw: currentUser is null (not signed in)');
+      return <dynamic>[];
+    }
+
+    final enrollments = await supabase
+        .from("enrollments")
+        .select()
+        .eq("student_id", user.id);
+
+    return enrollments;
   }
 
   Future<void> enrollCourse(String courseId) async {

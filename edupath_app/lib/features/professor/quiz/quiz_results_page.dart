@@ -39,26 +39,26 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
     totalAttempts = results.length;
 
     if (results.isNotEmpty) {
-      int total = 0;
+        int total = 0;
 
-      highestScore = results.first["score"];
-      lowestScore = results.first["score"];
+        highestScore = results.first['score'];
+        lowestScore = results.first['score'];
 
-      for (final result in results) {
-        final score = result["score"] as int;
+        for (final result in results) {
+          final score = result['score'] as int;
 
-        total += score;
+          total += score;
 
-        if (score > highestScore) {
-          highestScore = score;
+          if (score > highestScore) {
+            highestScore = score;
+          }
+
+          if (score < lowestScore) {
+            lowestScore = score;
+          }
         }
 
-        if (score < lowestScore) {
-          lowestScore = score;
-        }
-      }
-
-      averageScore = total / totalAttempts;
+        averageScore = total / totalAttempts;
     }
 
     if (!mounted) return;
@@ -73,149 +73,186 @@ class _QuizResultsPageState extends State<QuizResultsPage> {
     String value,
     IconData icon,
   ) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            Icon(icon, size: 32),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+      final theme = Theme.of(context);
+
+      return Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, size: 28, color: theme.colorScheme.primary),
+              const SizedBox(height: 10),
+              Text(
+                value,
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(title),
-          ],
+              const SizedBox(height: 6),
+              Text(title, style: theme.textTheme.bodySmall),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+  }
+
+  void _onExport() {
+      // Placeholder: exporting handled elsewhere. Keep UI friendly.
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Export not implemented yet')));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("${widget.quiz.title} Results"),
-      ),
-      body: loading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : results.isEmpty
-              ? const Center(
-                  child: Text("No submissions yet."),
-                )
-              : Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Row(
+      final theme = Theme.of(context);
+
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('${widget.quiz.title} Results'),
+          elevation: 0,
+          backgroundColor: theme.scaffoldBackgroundColor,
+          foregroundColor: theme.colorScheme.onBackground,
+          actions: [
+            IconButton(
+              tooltip: 'Export results',
+              icon: const Icon(Icons.download),
+              onPressed: _onExport,
+            ),
+          ],
+        ),
+        body: loading
+            ? const Center(child: CircularProgressIndicator())
+            : results.isEmpty
+                ? Center(
+                    child: Text('No submissions yet.', style: theme.textTheme.bodyLarge),
+                  )
+                : RefreshIndicator(
+                    onRefresh: loadResults,
+                    child: SingleChildScrollView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(
-                            child: summaryCard(
-                              "Attempts",
-                              totalAttempts.toString(),
-                              Icons.assignment,
-                            ),
+                          // Top summary row
+                          Row(
+                            children: [
+                              Expanded(child: summaryCard('Attempts', '$totalAttempts', Icons.assignment)),
+                              const SizedBox(width: 12),
+                              Expanded(child: summaryCard('Average', averageScore > 0 ? '${averageScore.toStringAsFixed(1)}%' : '0%', Icons.bar_chart)),
+                              const SizedBox(width: 12),
+                              Expanded(child: summaryCard('Highest', '$highestScore', Icons.emoji_events)),
+                              const SizedBox(width: 12),
+                              Expanded(child: summaryCard('Lowest', '$lowestScore', Icons.trending_down)),
+                            ],
                           ),
-                          Expanded(
-                            child: summaryCard(
-                              "Average",
-                              averageScore > 0
-                                  ? "${averageScore.round()}%"
-                                  : "0%",
-                              Icons.percent,
-                            ),
+
+                          const SizedBox(height: 18),
+
+                          // Student results header
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Student Results', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                              Text('$totalAttempts submissions', style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                            ],
                           ),
-                          Expanded(
-                            child: summaryCard(
-                              "Highest",
-                              highestScore.toString(),
-                              Icons.trending_up,
-                            ),
+
+                          const SizedBox(height: 12),
+
+                          // Student list
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: results.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 10),
+                            itemBuilder: (context, index) {
+                              final result = results[index];
+                              final profile = result['profiles'] as Map<String, dynamic>;
+                              final score = (result['score'] as num).toDouble();
+                              final total = (result['total_items'] as num).toDouble();
+                              final pct = total > 0 ? (score / total) : 0.0;
+
+                              return Card(
+                                elevation: 1,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                                  child: Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 22,
+                                        backgroundColor: theme.colorScheme.primary.withOpacity(0.12),
+                                        child: const Icon(Icons.person, color: Colors.white),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(profile['full_name'] ?? profile['email'] ?? 'Unknown', style: theme.textTheme.bodyLarge),
+                                            const SizedBox(height: 6),
+                                            Text('${score.round()} / ${total.round()}', style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                                            const SizedBox(height: 8),
+                                            ClipRRect(
+                                              borderRadius: BorderRadius.circular(6),
+                                              child: LinearProgressIndicator(
+                                                value: pct,
+                                                minHeight: 8,
+                                                backgroundColor: theme.dividerColor,
+                                                valueColor: AlwaysStoppedAnimation<Color>(
+                                                  pct >= 0.75 ? Colors.green : (pct >= 0.5 ? Colors.orange : Colors.red),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          Text('${(pct * 100).round()}%', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                                          const SizedBox(height: 8),
+                                          PopupMenuButton<String>(
+                                            onSelected: (v) {
+                                              if (v == 'view') {
+                                                showDialog(
+                                                  context: context,
+                                                  builder: (_) => AlertDialog(
+                                                    title: const Text('Result details'),
+                                                    content: Text('Score: ${score.round()} / ${total.round()}\nUser: ${profile['full_name'] ?? profile['email']}'),
+                                                    actions: [
+                                                      TextButton(onPressed: () => Navigator.pop(context), child: const Text('Close')),
+                                                    ],
+                                                  ),
+                                                );
+                                              } else if (v == 'export') {
+                                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Export for this entry not implemented')));
+                                              }
+                                            },
+                                            itemBuilder: (_) => const [
+                                              PopupMenuItem(value: 'view', child: Text('View details')),
+                                              PopupMenuItem(value: 'export', child: Text('Export entry')),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           ),
-                          Expanded(
-                            child: summaryCard(
-                              "Lowest",
-                              lowestScore.toString(),
-                              Icons.trending_down,
-                            ),
-                          ),
+
+                          const SizedBox(height: 20),
+
+                          // Small note
+                          Text('Tip: Use the export button to download CSV of results for offline analysis.', style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor), textAlign: TextAlign.center),
                         ],
                       ),
                     ),
-                    Expanded(
-                        child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        GridView.count(
-                          crossAxisCount: 2,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          childAspectRatio: 1.4,
-                          children: [
-                            summaryCard(
-                              "Average",
-                              averageScore.toStringAsFixed(1),
-                              Icons.bar_chart,
-                            ),
-                            summaryCard(
-                              "Highest",
-                              "$highestScore",
-                              Icons.emoji_events,
-                            ),
-                            summaryCard(
-                              "Lowest",
-                              "$lowestScore",
-                              Icons.trending_down,
-                            ),
-                            summaryCard(
-                              "Attempts",
-                              "$totalAttempts",
-                              Icons.people,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          "Student Results",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        ...results.map((result) {
-                          final profile = result["profiles"];
-
-                          return Card(
-                            child: ListTile(
-                              leading: const CircleAvatar(
-                                child: Icon(Icons.person),
-                              ),
-                              title: Text(
-                                profile["full_name"] ?? profile["email"],
-                              ),
-                              subtitle: Text(
-                                "${result["score"]} / ${result["total_items"]}",
-                              ),
-                              trailing: Text(
-                                "${((result["score"] / result["total_items"]) * 100).round()}%",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
-                      ],
-                    )),
-                  ],
-                ),
-    );
+                  ),
+      );
   }
 }

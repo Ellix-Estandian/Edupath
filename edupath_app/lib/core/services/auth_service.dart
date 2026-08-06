@@ -3,15 +3,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'supabase_service.dart';
 
 class AuthService {
-  final SupabaseClient _supabase = SupabaseService.client;
+  SupabaseClient? _supabase;
 
-  User? get currentUser => _supabase.auth.currentUser;
+  SupabaseClient get _client => _supabase ??= SupabaseService.client;
+
+  User? get currentUser => _client.auth.currentUser;
 
   Future<AuthResponse> signUp({
     required String email,
     required String password,
   }) async {
-    return await _supabase.auth.signUp(
+    return await _client.auth.signUp(
       email: email,
       password: password,
     );
@@ -21,15 +23,15 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    return await _supabase.auth.signInWithPassword(
+    return await _client.auth.signInWithPassword(
       email: email,
       password: password,
     );
   }
 
   Future<void> signOut() async {
-    await _supabase.auth.signOut();
+    await _client.auth.signOut();
   }
 
-  Stream<AuthState> get authState => _supabase.auth.onAuthStateChange;
+  Stream<AuthState> get authState => _client.auth.onAuthStateChange;
 }

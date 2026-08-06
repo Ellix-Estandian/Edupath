@@ -128,53 +128,120 @@ class DashboardService {
       };
     }).toList();
   }
+
   Future<List<Map<String, dynamic>>> getQuizPerformance() async {
-  final user = supabase.auth.currentUser!;
+    final user = supabase.auth.currentUser!;
 
-  // Professor's courses
-  final courses = await supabase
-      .from("courses")
-      .select("id")
-      .eq("professor_id", user.id);
+    // Professor's courses
+    final courses =
+        await supabase.from("courses").select("id").eq("professor_id", user.id);
 
-  final courseIds = courses.map((e) => e["id"]).toList();
+    final courseIds = courses.map((e) => e["id"]).toList();
 
-  if (courseIds.isEmpty) return [];
+    if (courseIds.isEmpty) return [];
 
-  // Quizzes
-  final quizzes = await supabase
-      .from("quizzes")
-      .select("id, title")
-      .inFilter("course_id", courseIds);
+    // Quizzes
+    final quizzes = await supabase
+        .from("quizzes")
+        .select("id, title")
+        .inFilter("course_id", courseIds);
 
-  if (quizzes.isEmpty) return [];
+    if (quizzes.isEmpty) return [];
 
-  List<Map<String, dynamic>> result = [];
+    List<Map<String, dynamic>> result = [];
 
-  for (final quiz in quizzes) {
-    final attempts = await supabase
-        .from("quiz_attempts")
-        .select("score")
-        .eq("quiz_id", quiz["id"]);
+    for (final quiz in quizzes) {
+      final attempts = await supabase
+          .from("quiz_attempts")
+          .select("score")
+          .eq("quiz_id", quiz["id"]);
 
-    double average = 0;
+      double average = 0;
 
-    if (attempts.isNotEmpty) {
-      double total = 0;
+      if (attempts.isNotEmpty) {
+        double total = 0;
 
-      for (final attempt in attempts) {
-        total += (attempt["score"] as num).toDouble();
+        for (final attempt in attempts) {
+          total += (attempt["score"] as num).toDouble();
+        }
+
+        average = total / attempts.length;
       }
 
-      average = total / attempts.length;
+      result.add({
+        "title": quiz["title"],
+        "average": average,
+      });
     }
 
-    result.add({
-      "title": quiz["title"],
-      "average": average,
-    });
+    return result;
   }
 
-  return result;
-}
+  Future<Map<String, dynamic>> getStudentStats() async {
+    final user = supabase.auth.currentUser!;
+
+    // Enrolled courses
+    final enrollments = await supabase
+        .from("enrollments")
+        .select("course_id")
+        .eq("student_id", user.id);
+
+    // Quiz attempts
+    final attempts = await supabase
+        .from("quiz_attempts")
+        .select("score, total_items")
+        .eq("student_id", user.id);
+
+    int totalCourses = enrollments.length;
+    int quizzesCompleted = attempts.length;
+
+    double average = 0;
+    int bestScore = 0;
+
+    if (attempts.isNotEmpty) {
+      double totalPercentage = 0;
+
+      for (final attempt in attempts) {
+        final score = attempt["score"] as int;
+        final total = attempt["total_items"] as int;
+
+        final percent = (score / total) * 100;
+
+        totalPercentage += percent;
+
+        if (percent > bestScore) {
+          bestScore = percent.round();
+        }
+      }
+
+      average = totalPercentage / attempts.length;
+    }
+
+    return {
+      "courses": totalCourses,
+      "completed": quizzesCompleted,
+      "average": average,
+      "best": bestScore,
+    };
+  }
+
+  Future<List<Map<String, dynamic>>> getStudentRecentAttempts() async {
+    final user = supabase.auth.currentUser!;
+
+    final response = await supabase
+        .from("quiz_attempts")
+        .select("""
+        score,
+        total_items,
+        submitted_at,
+        quizzes(
+          title
+        )
+      """)
+        .eq("student_id", user.id)
+        .order("submitted_at", ascending: false)
+        .limit(5);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
 }
