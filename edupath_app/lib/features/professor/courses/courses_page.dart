@@ -130,7 +130,7 @@ class _CoursesPageState extends State<CoursesPage> {
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Text(
-                                        'My Courses',
+                                        'Courses',
                                         style: theme.textTheme.titleLarge
                                             ?.copyWith(
                                           color: Colors.white,

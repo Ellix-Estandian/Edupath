@@ -3,6 +3,9 @@
 .packages
 .pub/
 build/
+.env
+.env.*
+!.env.example
 
 # Android
 **/android/.gradle/

@@ -15,6 +15,7 @@ from services.slide_parser import parse_slides
 import uuid
 from services.quiz_ai_service import generate_quiz
 import json
+from typing import Optional
 from services.quiz_save_service import save_quiz
 from services.exam_ai_service import generate_exam
 from services.exam_export_service import export_exam_to_docx
@@ -28,8 +29,27 @@ class SaveQuizRequest(BaseModel):
     course_id: str
     title: str
     questions: list
+    duration_minutes: int
+    available_from: str
+    available_until: str
 
 app = FastAPI(title="EduPath AI Backend")
+
+
+@app.get("/generate-learning-objective")
+def generate_learning_objective(course_id: str, topic: str, material_id: str = ""):
+    chunks = search_chunks(topic, course_id)
+    if material_id:
+        matching = [chunk for chunk in chunks if chunk.get("material_id") == material_id]
+        if matching:
+            chunks = matching
+    context = "\n".join(chunk["chunk_text"] for chunk in chunks)
+    objective = ask(
+        "Write one concise, measurable learning objective beginning with an action verb. "
+        "Use only this material and return only the objective.\n"
+        f"Topic: {topic}\nMaterial:\n{context}"
+    )
+    return {"objective": objective.strip()}
 
 
 @app.on_event("startup")
@@ -164,11 +184,17 @@ def generate_quiz_endpoint(
     course_id: str,
     topic: str,
     num_questions: int = 5,
+    cognitive_level: str = "Balanced",
+    material_id: str = "",
+    learning_objective: str = "",
 ):
     ai_output = generate_quiz(
         course_id=course_id,
         topic=topic,
         num_questions=num_questions,
+        cognitive_level=cognitive_level,
+        material_id=material_id or None,
+        learning_objective=learning_objective or None,
     )
 
     try:
@@ -191,6 +217,9 @@ def save_generated_quiz(request: SaveQuizRequest):
         request.course_id,
         request.title,
         request.questions,
+        request.duration_minutes,
+        request.available_from,
+        request.available_until,
     )
 
     return {
@@ -206,7 +235,7 @@ def generate_exam_endpoint(
     tf: int = 5,
     identification: int = 5,
     essay: int = 2,
-    difficulty: str = "Medium",
+    parts: Optional[str] = None,
 ):
     exam = generate_exam(
         course_id=course_id,
@@ -215,7 +244,7 @@ def generate_exam_endpoint(
         tf=tf,
         identification=identification,
         essay=essay,
-        difficulty=difficulty,
+        parts=_parse_exam_parts(parts),
     )
 
     return {
@@ -230,7 +259,8 @@ def download_exam(
     tf: int = 5,
     identification: int = 5,
     essay: int = 2,
-    difficulty: str = "Medium",
+    parts: Optional[str] = None,
+    title: str = "",
 ):
     exam = generate_exam(
         course_id=course_id,
@@ -239,7 +269,7 @@ def download_exam(
         tf=tf,
         identification=identification,
         essay=essay,
-        difficulty=difficulty,
+        parts=_parse_exam_parts(parts),
     )
 
     output = "generated_exam.docx"
@@ -247,6 +277,7 @@ def download_exam(
     export_exam_to_docx(
         exam,
         output,
+        title or "EduPath AI Generated Examination",
     )
 
     return FileResponse(
@@ -263,7 +294,8 @@ def download_exam_pdf(
     tf: int = 5,
     identification: int = 5,
     essay: int = 2,
-    difficulty: str = "Medium",
+    parts: Optional[str] = None,
+    title: str = "",
 ):
     exam = generate_exam(
         course_id=course_id,
@@ -272,7 +304,7 @@ def download_exam_pdf(
         tf=tf,
         identification=identification,
         essay=essay,
-        difficulty=difficulty,
+        parts=_parse_exam_parts(parts),
     )
 
     output = "generated_exam.pdf"
@@ -280,6 +312,7 @@ def download_exam_pdf(
     export_exam_to_pdf(
         exam,
         output,
+        title or "EduPath AI Generated Examination",
     )
 
     return FileResponse(
@@ -287,3 +320,13 @@ def download_exam_pdf(
         media_type="application/pdf",
         filename="Generated Examination.pdf",
     )
+
+
+def _parse_exam_parts(parts: Optional[str]):
+    if not parts:
+        return None
+    try:
+        parsed = json.loads(parts)
+        return parsed if isinstance(parsed, list) else None
+    except json.JSONDecodeError:
+        return None

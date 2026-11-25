@@ -9,7 +9,6 @@ import '../exam/ai_exam_page.dart';
 import '../learning_materials/learning_materials_page.dart';
 import '../quiz/ai_quiz_page.dart';
 import '../quiz/quiz_list_page.dart';
-import '../presentations/presentations_page.dart';
 import 'package:flutter/services.dart';
 
 class CourseDetailPage extends StatefulWidget {
@@ -102,24 +101,33 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
               if (value == 'edit') {
                 final updated = await Navigator.push<bool?>(
                   context,
-                  MaterialPageRoute(builder: (_) => EditCoursePage(course: widget.course)),
+                  MaterialPageRoute(
+                      builder: (_) => EditCoursePage(course: widget.course)),
                 );
                 if (updated == true) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Course updated')));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Course updated')));
                   setState(() {});
                 }
               } else if (value == 'share') {
-                await Clipboard.setData(ClipboardData(text: widget.course.courseCode));
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Course code copied to clipboard')));
+                await Clipboard.setData(
+                    ClipboardData(text: widget.course.courseCode));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                    content: Text('Course code copied to clipboard')));
               } else if (value == 'delete') {
                 final confirmed = await showDialog<bool>(
                   context: context,
                   builder: (_) => AlertDialog(
                     title: const Text('Delete course'),
-                    content: Text("Are you sure you want to delete '${widget.course.title}'?"),
+                    content: Text(
+                        "Are you sure you want to delete '${widget.course.title}'?"),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                      ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+                      TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text('Cancel')),
+                      ElevatedButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text('Delete')),
                     ],
                   ),
                 );
@@ -127,19 +135,24 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                   try {
                     await service.deleteCourse(widget.course.id);
                     if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Course deleted')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Course deleted')));
                     Navigator.pop(context);
                   } catch (e) {
                     if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+                    ScaffoldMessenger.of(context)
+                        .showSnackBar(SnackBar(content: Text(e.toString())));
                   }
                 }
               }
             },
             itemBuilder: (context) => [
               const PopupMenuItem(value: 'edit', child: Text('Edit')),
-              const PopupMenuItem(value: 'share', child: Text('Copy course code')),
-              const PopupMenuItem(value: 'delete', child: Text('Delete', style: TextStyle(color: Colors.red))),
+              const PopupMenuItem(
+                  value: 'share', child: Text('Copy course code')),
+              const PopupMenuItem(
+                  value: 'delete',
+                  child: Text('Delete', style: TextStyle(color: Colors.red))),
             ],
             icon: const Icon(Icons.more_horiz_rounded),
           ),
@@ -282,22 +295,6 @@ class _CourseDetailPageState extends State<CourseDetailPage> {
                         context,
                         MaterialPageRoute(
                           builder: (_) => AIQuizPage(
-                            course: widget.course,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  _actionCard(
-                    Icons.slideshow_rounded,
-                    'Presentations',
-                    'Generate & manage slides',
-                    AppColors.primary,
-                    () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => PresentationsPage(
                             course: widget.course,
                           ),
                         ),

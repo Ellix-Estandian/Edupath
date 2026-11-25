@@ -2,11 +2,11 @@ from docx import Document
 from docx.shared import Pt
 
 
-def export_exam_to_docx(exam: str, output_file: str):
+def export_exam_to_docx(exam: str, output_file: str, title_text: str = "EduPath AI Generated Examination"):
     document = Document()
 
     title = document.add_heading(
-        "EduPath AI Generated Examination",
+        title_text,
         level=1,
     )
 

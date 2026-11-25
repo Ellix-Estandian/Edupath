@@ -107,7 +107,7 @@ class _LoginPageState extends State<LoginPage> {
                     final isWide = constraints.maxWidth >= 760;
                     final hero = const Center(
                       child: Text(
-                        'EduPath',
+                        'CourseMind',
                         style: TextStyle(
                           fontSize: 48,
                           fontWeight: FontWeight.bold,
@@ -290,7 +290,8 @@ class _LoginFormCard extends StatelessWidget {
                   // Use a guarded builder so any build-time exceptions inside RegisterPage
                   // are caught and displayed instead of leaving the user on a white screen.
                   try {
-                    await Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (c) {
+                    await Navigator.of(context, rootNavigator: true)
+                        .push(MaterialPageRoute(builder: (c) {
                       try {
                         return const RegisterPage();
                       } catch (e, st) {
@@ -304,11 +305,15 @@ class _LoginFormCard extends StatelessWidget {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                                  const Icon(Icons.error_outline,
+                                      size: 48, color: Colors.red),
                                   const SizedBox(height: 12),
-                                  const Text('Failed to open registration page', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  const Text('Failed to open registration page',
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold)),
                                   const SizedBox(height: 8),
-                                  Text(e.toString(), textAlign: TextAlign.center),
+                                  Text(e.toString(),
+                                      textAlign: TextAlign.center),
                                   const SizedBox(height: 12),
                                   ElevatedButton(
                                     onPressed: () => Navigator.pop(c),
@@ -322,7 +327,8 @@ class _LoginFormCard extends StatelessWidget {
                       }
                     }));
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Navigation error: ${e.toString()}')));
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                        content: Text('Navigation error: ${e.toString()}')));
                   }
                 },
                 child: const Text('Create a new account'),
@@ -334,4 +340,3 @@ class _LoginFormCard extends StatelessWidget {
     );
   }
 }
-

@@ -3,9 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 
 import '../../../core/services/ai_quiz_service.dart';
+import '../../../core/services/ai_exam_service.dart';
+import '../../../core/services/learning_material_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
+import '../assessment_setup_page.dart';
 import '../../../models/course.dart';
+import '../../../models/learning_material.dart';
 
 class AIQuizPage extends StatefulWidget {
   final Course course;
@@ -21,10 +25,31 @@ class AIQuizPage extends StatefulWidget {
 
 class _AIQuizPageState extends State<AIQuizPage> {
   final AIQuizService service = AIQuizService();
+  final LearningMaterialService materialService = LearningMaterialService();
   final topicController = TextEditingController();
+  final objectiveController = TextEditingController();
 
   bool loading = false;
   List<dynamic> questions = [];
+  String cognitiveLevel = 'Balanced';
+  List<LearningMaterial> materials = [];
+  String? materialId;
+  bool loadingMaterials = true;
+  bool generatingObjective = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadMaterials();
+  }
+
+  Future<void> _loadMaterials() async {
+    try {
+      materials = await materialService.getMaterials(widget.course.id);
+    } finally {
+      if (mounted) setState(() => loadingMaterials = false);
+    }
+  }
 
   Future<void> generate() async {
     if (topicController.text.trim().isEmpty) return;
@@ -35,6 +60,9 @@ class _AIQuizPageState extends State<AIQuizPage> {
       final dynamic result = await service.generateQuiz(
         courseId: widget.course.id,
         topic: topicController.text.trim(),
+        cognitiveLevel: cognitiveLevel,
+        materialId: materialId,
+        learningObjective: objectiveController.text.trim(),
       );
 
       // Normalize result to a List of question maps
@@ -93,11 +121,25 @@ class _AIQuizPageState extends State<AIQuizPage> {
   Future<void> saveQuiz() async {
     if (questions.isEmpty) return;
 
+    final setup = await Navigator.push<AssessmentSetup>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AssessmentSetupPage(
+          assessmentLabel: 'Quiz',
+          initialTitle: topicController.text.trim(),
+        ),
+      ),
+    );
+    if (setup == null) return;
+
     try {
       await service.saveQuiz(
         courseId: widget.course.id,
-        title: topicController.text.trim(),
+        title: setup.title,
         questions: questions,
+        durationMinutes: setup.durationMinutes,
+        availableFrom: setup.startsAt,
+        availableUntil: setup.endsAt,
       );
 
       if (!mounted) return;
@@ -201,6 +243,48 @@ class _AIQuizPageState extends State<AIQuizPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
+                    DropdownButtonFormField<String>(
+                      value: materialId,
+                      decoration: const InputDecoration(
+                        labelText: 'Connected lesson / material',
+                        prefixIcon: Icon(Icons.menu_book_rounded),
+                      ),
+                      items: [
+                        const DropdownMenuItem(value: null, child: Text('Any course material')),
+                        ...materials.map((material) => DropdownMenuItem(
+                              value: material.id,
+                              child: Text(material.fileName, overflow: TextOverflow.ellipsis),
+                            )),
+                      ],
+                      onChanged: loadingMaterials ? null : (value) => setState(() => materialId = value),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: objectiveController,
+                            maxLines: 2,
+                            decoration: const InputDecoration(
+                              labelText: 'Learning objective',
+                              hintText: 'What should students demonstrate?',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        IconButton.filledTonal(
+                          tooltip: 'Generate AI learning objective',
+                          onPressed: generatingObjective ? null : _generateObjective,
+                          icon: generatingObjective
+                              ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                              : const Icon(Icons.auto_awesome_rounded),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _cognitiveLevelField(),
+                    const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -224,7 +308,7 @@ class _AIQuizPageState extends State<AIQuizPage> {
                         child: OutlinedButton.icon(
                           onPressed: saveQuiz,
                           icon: const Icon(Icons.save_rounded),
-                          label: const Text('Save Quiz'),
+                          label: const Text('Set up & save quiz'),
                         ),
                       ),
                     ],
@@ -281,6 +365,8 @@ class _AIQuizPageState extends State<AIQuizPage> {
                         : q.toString();
                     final answerText =
                         (q is Map) ? (q['answer'] ?? q['answers'] ?? '') : '';
+                    final questionLevel =
+                        (q is Map) ? q['cognitive_level']?.toString() : null;
 
                     return Container(
                       padding: const EdgeInsets.all(16),
@@ -300,6 +386,10 @@ class _AIQuizPageState extends State<AIQuizPage> {
                                 .titleMedium
                                 ?.copyWith(fontWeight: FontWeight.bold),
                           ),
+                          if (questionLevel == 'LOS' || questionLevel == 'HOS') ...[
+                            const SizedBox(height: 8),
+                            _cognitiveLevelBadge(questionLevel!),
+                          ],
                           const SizedBox(height: 8),
                           if (answerText != null &&
                               answerText.toString().isNotEmpty)
@@ -334,5 +424,73 @@ class _AIQuizPageState extends State<AIQuizPage> {
         ),
       ),
     );
+  }
+
+  Widget _cognitiveLevelField() {
+    return DropdownButtonFormField<String>(
+      value: cognitiveLevel,
+      decoration: const InputDecoration(
+        labelText: 'Cognitive level',
+        prefixIcon: Icon(Icons.psychology_alt_rounded),
+      ),
+      items: const [
+        DropdownMenuItem(
+          value: 'Balanced',
+          child: Text('Balanced (LOS & HOS)'),
+        ),
+        DropdownMenuItem(
+          value: 'LOS',
+          child: Text('LOS — recall, understand, apply'),
+        ),
+        DropdownMenuItem(
+          value: 'HOS',
+          child: Text('HOS — analyze, evaluate, solve'),
+        ),
+      ],
+      onChanged: (value) => setState(() => cognitiveLevel = value!),
+    );
+  }
+
+  Widget _cognitiveLevelBadge(String level) {
+    final isHigherOrder = level == 'HOS';
+    final color = isHigherOrder ? AppColors.accent : AppColors.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$level · ${isHigherOrder ? 'Higher-order skill' : 'Lower-order skill'}',
+        style: TextStyle(color: color, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+
+  Future<void> _generateObjective() async {
+    if (topicController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a quiz topic first.')));
+      return;
+    }
+    setState(() => generatingObjective = true);
+    try {
+      final objective = await AIExamService().generateLearningObjective(
+        courseId: widget.course.id,
+        topic: topicController.text.trim(),
+        materialId: materialId,
+      );
+      if (mounted) objectiveController.text = objective;
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => generatingObjective = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    topicController.dispose();
+    objectiveController.dispose();
+    super.dispose();
   }
 }

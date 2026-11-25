@@ -14,11 +14,21 @@ class LearningMaterialService {
 
     print(response.toString());
 
-    return response
+    final materials = response
         .map<LearningMaterial>(
           (json) => LearningMaterial.fromJson(json),
         )
         .toList();
+
+    if (materials.isEmpty) {
+      return [
+        LearningMaterial(id: 'demo-$courseId-1', courseId: courseId, fileName: 'Lesson 1: Introduction', filePath: 'demo/lesson-1.pdf', fileType: 'pdf'),
+        LearningMaterial(id: 'demo-$courseId-2', courseId: courseId, fileName: 'Lesson 2: Core Concepts', filePath: 'demo/lesson-2.pdf', fileType: 'pdf'),
+        LearningMaterial(id: 'demo-$courseId-3', courseId: courseId, fileName: 'Lesson 3: Application', filePath: 'demo/lesson-3.pdf', fileType: 'pdf'),
+      ];
+    }
+
+    return materials;
   }
 
   Future<void> updateMaterial({

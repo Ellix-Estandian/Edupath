@@ -10,7 +10,7 @@ class EduPathApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'EduPath',
+      title: 'CourseMind',
       theme: AppTheme.lightTheme,
       home: const LoginPage(),
     );

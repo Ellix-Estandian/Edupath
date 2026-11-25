@@ -2,14 +2,14 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import SimpleDocTemplate, Paragraph
 
 
-def export_exam_to_pdf(exam: str, output_file: str):
+def export_exam_to_pdf(exam: str, output_file: str, title_text: str = "EduPath AI Generated Examination"):
     doc = SimpleDocTemplate(output_file)
     styles = getSampleStyleSheet()
 
     elements = []
 
     elements.append(
-        Paragraph("<b>EduPath AI Generated Examination</b>", styles["Title"])
+        Paragraph(f"<b>{title_text}</b>", styles["Title"])
     )
 
     for line in exam.split("\n"):

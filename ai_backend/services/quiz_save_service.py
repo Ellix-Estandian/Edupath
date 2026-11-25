@@ -1,13 +1,23 @@
 from services.supabase_service import supabase
 
 
-def save_quiz(course_id: str, title: str, questions: list):
+def save_quiz(
+    course_id: str,
+    title: str,
+    questions: list,
+    duration_minutes: int,
+    available_from: str,
+    available_until: str,
+):
     # Create quiz
     quiz = (
         supabase.table("quizzes")
         .insert({
             "course_id": course_id,
             "title": title,
+            "duration_minutes": duration_minutes,
+            "available_from": available_from,
+            "available_until": available_until,
         })
         .execute()
     )

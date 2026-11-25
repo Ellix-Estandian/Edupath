@@ -175,12 +175,14 @@ class _StudentQuizListPageState extends State<StudentQuizListPage> {
                                 ),
                                 title: Text(quiz.title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
                                 subtitle: Text(
-                                  quiz.description,
+                                  quiz.isAvailableNow
+                                      ? quiz.description
+                                      : 'Not available at this time',
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 trailing: ElevatedButton(
-                                  onPressed: () {
+                                  onPressed: !quiz.isAvailableNow ? null : () {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(builder: (_) => TakeQuizPage(quiz: quiz)),
@@ -188,7 +190,7 @@ class _StudentQuizListPageState extends State<StudentQuizListPage> {
                                   },
                                   child: const Text('Start'),
                                 ),
-                                onTap: () {
+                                onTap: !quiz.isAvailableNow ? null : () {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(builder: (_) => TakeQuizPage(quiz: quiz)),

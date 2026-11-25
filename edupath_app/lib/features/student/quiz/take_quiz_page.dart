@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -29,11 +31,34 @@ class _TakeQuizPageState extends State<TakeQuizPage> {
   final Map<String, String> selectedAnswers = {};
 
   bool loading = true;
+  Timer? _timer;
+  late DateTime _deadline;
+  Duration _remaining = Duration.zero;
+  bool _submitting = false;
 
   @override
   void initState() {
     super.initState();
+    if (widget.quiz.durationMinutes != null) {
+      _deadline = DateTime.now().add(Duration(minutes: widget.quiz.durationMinutes!));
+      _remaining = _deadline.difference(DateTime.now());
+      _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+        final remaining = _deadline.difference(DateTime.now());
+        if (!mounted) return;
+        setState(() => _remaining = remaining.isNegative ? Duration.zero : remaining);
+        if (remaining <= Duration.zero) {
+          _timer?.cancel();
+          submitQuiz(force: true);
+        }
+      });
+    }
     loadQuiz();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
   }
 
   Future<void> loadQuiz() async {
@@ -50,8 +75,9 @@ class _TakeQuizPageState extends State<TakeQuizPage> {
     });
   }
 
-  Future<void> submitQuiz() async {
-    if (selectedAnswers.length != questions.length) {
+  Future<void> submitQuiz({bool force = false}) async {
+    if (_submitting) return;
+    if (!force && selectedAnswers.length != questions.length) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Please answer all questions before submitting."),
@@ -64,6 +90,8 @@ class _TakeQuizPageState extends State<TakeQuizPage> {
 
     if (user == null) return;
 
+    _submitting = true;
+    _timer?.cancel();
     int score = 0;
 
     final attemptId = await service.createAttempt(
@@ -171,6 +199,12 @@ class _TakeQuizPageState extends State<TakeQuizPage> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                if (widget.quiz.durationMinutes != null)
+                  Text(
+                    'Time remaining: ${_remainingLabel()}',
+                    style: theme.textTheme.titleSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
                 const SizedBox(height: 12),
                 // small progress summary
                 Row(
@@ -360,5 +394,12 @@ class _TakeQuizPageState extends State<TakeQuizPage> {
         ],
       ),
     );
+  }
+
+  String _remainingLabel() {
+    final hours = _remaining.inHours;
+    final minutes = _remaining.inMinutes.remainder(60);
+    final seconds = _remaining.inSeconds.remainder(60);
+    return '${hours.toString().padLeft(2, '0')}:${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 }
